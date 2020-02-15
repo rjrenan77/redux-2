@@ -1,100 +1,75 @@
-import React from 'react';
-
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import { MdAddShoppingCart } from 'react-icons/md';
 import { ProductList } from './styles';
+import { formatPrice } from '../../util/format';
 
-export default function Home() {
-  return (
-    <ProductList>
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/tenis-nike-flyby-mid-masculino/26/HZM-3021-026/HZM-3021-026_detalhe1.jpg?ims=240x240"
-          alt="Tênis"
-        />
-        <strong> Tênis muito legal</strong>
-        <span>R$99,00</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#fff" /> 3
-          </div>
-          <span>Adicionar ao carrion</span>
-        </button>
-      </li>
+import * as CartActions from '../../store/modules/cart/actions';
 
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/tenis-nike-flyby-mid-masculino/26/HZM-3021-026/HZM-3021-026_detalhe1.jpg?ims=240x240"
-          alt="Tênis"
-        />
-        <strong> Tênis muito legal</strong>
-        <span>R$99,00</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#fff" /> 3
-          </div>
-          <span>Adicionar ao carrion</span>
-        </button>
-      </li>
+import api from '../../services/api';
 
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/tenis-nike-flyby-mid-masculino/26/HZM-3021-026/HZM-3021-026_detalhe1.jpg?ims=240x240"
-          alt="Tênis"
-        />
-        <strong> Tênis muito legal</strong>
-        <span>R$99,00</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#fff" /> 3
-          </div>
-          <span>Adicionar ao carrion</span>
-        </button>
-      </li>
+class Home extends Component {
+  state = {
+    products: [],
+  };
 
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/tenis-nike-flyby-mid-masculino/26/HZM-3021-026/HZM-3021-026_detalhe1.jpg?ims=240x240"
-          alt="Tênis"
-        />
-        <strong> Tênis muito legal</strong>
-        <span>R$99,00</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#fff" /> 3
-          </div>
-          <span>Adicionar ao carrion</span>
-        </button>
-      </li>
+  async componentDidMount() {
+    const response = await api.get('products');
 
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/tenis-nike-flyby-mid-masculino/26/HZM-3021-026/HZM-3021-026_detalhe1.jpg?ims=240x240"
-          alt="Tênis"
-        />
-        <strong> Tênis muito legal</strong>
-        <span>R$99,00</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#fff" /> 3
-          </div>
-          <span>Adicionar ao carrion</span>
-        </button>
-      </li>
+    const data = response.data.map(product => ({
+      ...product,
+      priceFormatted: formatPrice(product.price),
+    }));
 
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/tenis-nike-flyby-mid-masculino/26/HZM-3021-026/HZM-3021-026_detalhe1.jpg?ims=240x240"
-          alt="Tênis"
-        />
-        <strong> Tênis muito legal</strong>
-        <span>R$99,00</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#fff" /> 3
-          </div>
-          <span>Adicionar ao carrion</span>
-        </button>
-      </li>
-    </ProductList>
-  );
+    this.setState({
+      products: data,
+    });
+  }
+
+  handleAddProduct = product => {
+    const { addToCart } = this.props;
+
+    addToCart(product);
+  };
+
+  render() {
+    const { products } = this.state;
+    const { amount } = this.props;
+
+    return (
+      <ProductList>
+        {products.map(product => (
+          <li key={product.id}>
+            <img src={product.image} alt={product.title} />
+            <strong> {product.title}</strong>
+            <span>{product.priceFormatted}</span>
+            <button
+              type="button"
+              onClick={() => this.handleAddProduct(product)}
+            >
+              <div>
+                <MdAddShoppingCart size={16} color="#fff" />{' '}
+                {amount[product.id] || 0}
+              </div>
+              <span>Adicionar ao carrinho</span>
+            </button>
+          </li>
+        ))}
+      </ProductList>
+    );
+  }
 }
+
+const mapStateToProps = state => ({
+  amount: state.cart.reduce((amount, product) => {
+    amount[product.id] = product.amount;
+
+    return amount;
+  }, {}),
+});
+
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(CartActions, dispatch);
+
+export default connect(mapStateToProps, mapDispatchToProps)(Home);
